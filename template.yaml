@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Lambda function to compress S3 objects and delete originals
+
+Globals:
+  Function:
+    Runtime: python3.10
+    Timeout: 300
+    MemorySize: 1024
+
+Resources:
+  ZipCompressorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.lambda_handler
+      CodeUri: src/
+      Policies:
+        - S3FullAccess
+
