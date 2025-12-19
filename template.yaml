@@ -4,7 +4,6 @@ Description: Lambda function to compress S3 objects and delete originals
 
 Globals:
   Function:
-    # Runtime: python3.10
     Timeout: 300
     MemorySize: 1024
 
@@ -71,18 +70,11 @@ Resources:
                   - ec2:DeleteNetworkInterface
                 Resource: '*'
 
-  ZipArchiverECR:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: zip-archiver
-
   ZipCompressorFunc:
     Type: AWS::Serverless::Function
     Properties:
       PackageType: Image
-      ImageUri: zip-archiver
-      # Handler: app.lambda_handler
-      # CodeUri: src/
+      AutoPublishAlias: live
       Role: !GetAtt ZipComprRole.Arn
       Events:
         S3UploadEvent:
@@ -96,6 +88,10 @@ Resources:
         SubnetIds:
           - !Ref PrivateSubnet1
           - !Ref PrivateSubnet2
+    Metadata:
+      DockerTag: latest
+      DockerContext: ./src/
+      Dockerfile: Dockerfile
 
   SourceBucket:
     Type: AWS::S3::Bucket
