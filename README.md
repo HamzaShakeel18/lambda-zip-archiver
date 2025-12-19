@@ -73,7 +73,6 @@ Final storage ≈ $79,488/month
 - Lambda executions per million requests  
 - S3 PUT / GET / DELETE requests  
 - ECR storage for container images  
-- NAT gateway or VPC endpoint usage if applicable  
 
 ### Suggestions to Reduce Costs
 - Enable lifecycle policies to move older ZIPs to Glacier Deep Archive  
@@ -87,8 +86,6 @@ Potential bottlenecks and considerations at scale:
 
 - **Lambda Concurrency Limits:** High volume of S3 events may hit account concurrency limits.  
 - **S3 Event Fan-out:** Sudden bursts in file uploads can overwhelm Lambda triggers.  
-- **Docker Lambda Cold Starts:** Container images can increase cold start time.  
-- **Network Latency:** Downloading/uploading large files to S3 can add latency.  
 - **Tmp Storage Limits:** Lambda has `/tmp` limit of 512 MB; very large files may fail.  
 - **Request Volume:** Each file results in a GET + PUT + DELETE, doubling S3 request count.  
 
