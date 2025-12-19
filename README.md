@@ -53,7 +53,7 @@ The Lambda is containerized and stored in an ECR repository. Every deployment pu
 ```bash
 sam build
 sam deploy --guided  --stack-name zip-archiver-stack --capabilities CAPABILITY_NAMED_IAM
-
+```
 ---
 
 ## Cost Analysis 
