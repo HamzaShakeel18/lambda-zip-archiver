@@ -10,6 +10,10 @@ def lambda_handler(event, context):
         bucket = record['s3']['bucket']['name']
         key = record['s3']['object']['key']
 
+        if key.endswith('.zip'):
+            print(f"Skipping already zipped file: {key}")
+            continue
+            
         download_path = f"/tmp/{os.path.basename(key)}"
         zip_path = f"{download_path}.zip"
         zip_key = f"{key}.zip"
