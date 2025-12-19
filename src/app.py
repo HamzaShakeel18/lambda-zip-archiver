@@ -13,7 +13,7 @@ def lambda_handler(event, context):
         if key.endswith('.zip'):
             print(f"Skipping already zipped file: {key}")
             continue
-            
+
         download_path = f"/tmp/{os.path.basename(key)}"
         zip_path = f"{download_path}.zip"
         zip_key = f"{key}.zip"
@@ -28,6 +28,8 @@ def lambda_handler(event, context):
                 os.remove(download_path)
             if os.path.exists(zip_path):
                 os.remove(zip_path)
+            s3.delete_object(Bucket=bucket, Key=key)
+            print(f"Compressed and archived: {key}")
 
     return {
         "statusCode": 200,

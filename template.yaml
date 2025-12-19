@@ -4,11 +4,47 @@ Description: Lambda function to compress S3 objects and delete originals
 
 Globals:
   Function:
-    Runtime: python3.10
+    # Runtime: python3.10
     Timeout: 300
     MemorySize: 1024
 
 Resources:
+  LambdaVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: lambda-zip-archiver-vpc
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref LambdaVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: false
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref LambdaVPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: false
+
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Lambda
+      VpcId: !Ref LambdaVPC
+      SecurityGroupIngress: []
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
   ZipComprRole:
     Type: AWS::IAM::Role
     Properties:
@@ -23,12 +59,30 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      Policies:
+        - PolicyName: LambdaVPCAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:CreateNetworkInterface
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DeleteNetworkInterface
+                Resource: '*'
+
+  ZipArchiverECR:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: zip-archiver
 
   ZipCompressorFunc:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: app.lambda_handler
-      CodeUri: src/
+      PackageType: Image
+      ImageUri: zip-archiver
+      # Handler: app.lambda_handler
+      # CodeUri: src/
       Role: !GetAtt ZipComprRole.Arn
       Events:
         S3UploadEvent:
@@ -36,6 +90,12 @@ Resources:
           Properties:
             Bucket: !Ref SourceBucket
             Events: s3:ObjectCreated:*
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
 
   SourceBucket:
     Type: AWS::S3::Bucket
