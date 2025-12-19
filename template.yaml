@@ -30,9 +30,6 @@ Resources:
       Handler: app.lambda_handler
       CodeUri: src/
       Role: !GetAtt ZipComprRole.Arn
-      # Policies:
-      #   - S3FullAccessPolicy:
-      #       BucketName: test-lambda-archiver-manual
       Events:
         S3UploadEvent:
           Type: S3
