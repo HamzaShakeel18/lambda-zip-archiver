@@ -9,11 +9,40 @@ Globals:
     MemorySize: 1024
 
 Resources:
-  ZipCompressorFunction:
+  ZipComprRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: zip-compressor-lambda-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+  ZipCompressorFunc:
     Type: AWS::Serverless::Function
     Properties:
       Handler: app.lambda_handler
       CodeUri: src/
-      Policies:
-        - S3FullAccess
+      Role: !GetAtt ZipComprRole.Arn
+      # Policies:
+      #   - S3FullAccessPolicy:
+      #       BucketName: test-lambda-archiver-manual
+      Events:
+        S3UploadEvent:
+          Type: S3
+          Properties:
+            Bucket: !Ref SourceBucket
+            Events: s3:ObjectCreated:*
 
+  SourceBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub zip-archiver-bucket-${AWS::AccountId}-${AWS::Region}
+      VersioningConfiguration:
+        Status: Enabled
