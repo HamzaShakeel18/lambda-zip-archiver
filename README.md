@@ -53,3 +53,46 @@ The Lambda is containerized and stored in an ECR repository. Every deployment pu
 ```bash
 sam build
 sam deploy --guided  --stack-name zip-archiver-stack --capabilities CAPABILITY_NAMED_IAM
+
+---
+
+## Cost Analysis 
+
+The company is processing **1,000,000 files per hour**, with an average size of **10 MB** per file.
+
+### Storage Cost Without Compression
+10 MB × 1,000,000 files/hr × 24 hours × 30 days
+= 6,912,000,000 MB ≈ 6.9 PB
+S3 Standard storage cost (~$0.023 per GB):6,912,000 GB × $0.023 ≈ $158,976/month
+
+### Storage Cost After Compression
+Assuming compression reduces size by ~50%:
+Final storage ≈ $79,488/month
+
+### Additional Costs
+- Lambda executions per million requests  
+- S3 PUT / GET / DELETE requests  
+- ECR storage for container images  
+- NAT gateway or VPC endpoint usage if applicable  
+
+### Suggestions to Reduce Costs
+- Enable lifecycle policies to move older ZIPs to Glacier Deep Archive  
+- Batch compress multiple files together  
+
+---
+
+## Scalability / Bottlenecks 
+
+Potential bottlenecks and considerations at scale:
+
+- **Lambda Concurrency Limits:** High volume of S3 events may hit account concurrency limits.  
+- **S3 Event Fan-out:** Sudden bursts in file uploads can overwhelm Lambda triggers.  
+- **Docker Lambda Cold Starts:** Container images can increase cold start time.  
+- **Network Latency:** Downloading/uploading large files to S3 can add latency.  
+- **Tmp Storage Limits:** Lambda has `/tmp` limit of 512 MB; very large files may fail.  
+- **Request Volume:** Each file results in a GET + PUT + DELETE, doubling S3 request count.  
+
+**Recommendations:**
+- Consider batch processing for large uploads  
+- Monitor Lambda concurrency and scale limits  
+- Enable logging and metrics to identify bottlenecks early  
